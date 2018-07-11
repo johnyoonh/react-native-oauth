@@ -88,11 +88,11 @@ RCT_EXPORT_MODULE(OAuthManager);
     [authPlatform setURLOpener: ^void(NSURL *URL, DCTAuthPlatformCompletion completion) {
         // [sharedManager setPendingAuthentication:YES];
         if ([SFSafariViewController class] != nil) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                safariViewController = [[SFSafariViewController alloc] initWithURL:URL];
-                UIViewController *viewController = application.keyWindow.rootViewController;
-                [viewController presentViewController:safariViewController animated:YES completion: nil];
-            });
+          dispatch_async(dispatch_get_main_queue(), ^{
+            safariViewController = [[SFSafariViewController alloc] initWithURL:URL];
+            UIViewController *viewController = application.keyWindow.rootViewController;
+            [viewController presentViewController:safariViewController animated:YES completion: nil];
+          });
         } else {
             [application openURL:URL];
         }
@@ -444,28 +444,17 @@ RCT_EXPORT_METHOD(makeRequest:(NSString *)providerName
      initWithRequestMethod:method
      URL:apiUrl
      items:items];
-    
-    // Allow json body in POST / PUT requests
+
     NSDictionary *body = [opts objectForKey:@"body"];
     if (body != nil) {
-        NSMutableArray *items = [NSMutableArray array];
-        
         for (NSString *key in body) {
-            NSString *value = [body valueForKey:key];
-            
-            DCTAuthContentItem *item = [[DCTAuthContentItem alloc] initWithName:key value:value];
-            
-            if(item != nil) {
-                [items addObject: item];
-            }
+            NSData *data = [[NSString stringWithFormat:@"%@", [body valueForKey:key]] dataUsingEncoding:NSUTF8StringEncoding];
+            [request addMultiPartData:data withName:key type:@"application/json"]; // TODO: How should we handle different body types?
         }
-        
-        DCTAuthContent *content = [[DCTAuthContent alloc] initWithEncoding:NSUTF8StringEncoding
-                                                                      type:DCTAuthContentTypeJSON
-                                                                     items:items];
-        [request setContent:content];
     }
-    
+
+    request.account = existingAccount;
+
     // If there are headers
     NSDictionary *headers = [opts objectForKey:@"headers"];
     if (headers != nil) {
@@ -514,7 +503,7 @@ RCT_EXPORT_METHOD(makeRequest:(NSString *)providerName
             } else {
                 NSDictionary *resp = @{
                                        @"status": @(statusCode),
-                                       @"data": data != nil ? data : @[]
+                                       @"data": data
                                        };
                 callback(@[[NSNull null], resp]);
             }
