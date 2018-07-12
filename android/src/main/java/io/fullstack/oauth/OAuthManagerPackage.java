@@ -22,7 +22,6 @@ public class OAuthManagerPackage implements ReactPackage {
      * @param reactContext react application context that can be used to create modules
      * @return list of native modules to register with the newly created catalyst instance
      */
-    @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new OAuthManagerModule(reactContext));
